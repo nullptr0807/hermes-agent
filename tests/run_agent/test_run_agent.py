@@ -1897,6 +1897,7 @@ class TestBuildApiKwargs:
             tools=None,
             supports_reasoning=True,
             provider_profile=profile,
+            supported_reasoning_efforts=["low", "medium", "high"],
         )
         assert kwargs["extra_body"]["reasoning"] == {"effort": "medium"}
 
@@ -1915,6 +1916,7 @@ class TestBuildApiKwargs:
             supports_reasoning=True,
             reasoning_config={"enabled": True, "effort": "xhigh"},
             provider_profile=profile,
+            supported_reasoning_efforts=["low", "medium", "high"],
         )
         assert kwargs["extra_body"]["reasoning"] == {"effort": "high"}
 
@@ -1931,8 +1933,8 @@ class TestBuildApiKwargs:
         from providers import get_provider_profile
 
         monkeypatch.setattr(
-            "hermes_cli.models.github_model_reasoning_efforts",
-            lambda _model: ["low", "medium", "high"],
+            "hermes_cli.models.get_copilot_reasoning_efforts",
+            lambda _model, _api_key=None: ["low", "medium", "high"],
         )
         kwargs = get_transport("chat_completions").build_kwargs(
             model="gpt-5.4",
@@ -1941,6 +1943,7 @@ class TestBuildApiKwargs:
             supports_reasoning=True,
             reasoning_config={"enabled": True, "effort": client_effort},
             provider_profile=get_provider_profile(profile_name),
+            supported_reasoning_efforts=["low", "medium", "high"],
         )
 
         assert kwargs["extra_body"]["reasoning"] == {"effort": "high"}

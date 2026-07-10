@@ -573,14 +573,54 @@ def test_build_api_kwargs_copilot_responses_omits_reasoning_for_non_reasoning_mo
     assert "prompt_cache_key" not in kwargs
 
 
+def test_copilot_gpt56_max_uses_live_catalog_capability(monkeypatch):
+    """GPT-5.6 max must survive the Copilot Responses request path."""
+    import hermes_cli.models as copilot_models
+
+    copilot_models._copilot_catalog_cache = {}
+    copilot_models._copilot_catalog_failed_time = {}
+    catalog = [
+        {
+            "id": "gpt-5.6-sol",
+            "capabilities": {
+                "type": "chat",
+                "supports": {
+                    "reasoning_effort": [
+                        "none",
+                        "low",
+                        "medium",
+                        "high",
+                        "xhigh",
+                        "max",
+                    ]
+                },
+            },
+            "supported_endpoints": ["/responses"],
+        }
+    ]
+    monkeypatch.setattr(
+        "hermes_cli.models.fetch_github_model_catalog",
+        lambda **_kwargs: catalog,
+    )
+    agent = _build_copilot_agent(
+        monkeypatch,
+        model="gpt-5.6-sol",
+        reasoning_config={"enabled": True, "effort": "max"},
+    )
+
+    kwargs = agent._build_api_kwargs([{"role": "user", "content": "hi"}])
+
+    assert kwargs["reasoning"] == {"effort": "max"}
+
+
 @pytest.mark.parametrize("client_effort", ["max", "ultra"])
 def test_copilot_reasoning_projection_uses_highest_advertised_lower_effort(
     monkeypatch,
     client_effort,
 ):
     monkeypatch.setattr(
-        "hermes_cli.models.github_model_reasoning_efforts",
-        lambda _model: ["low", "medium", "high"],
+        "hermes_cli.models.get_copilot_reasoning_efforts",
+        lambda _model, _api_key=None: ["low", "medium", "high"],
     )
     agent = _build_copilot_agent(
         monkeypatch,

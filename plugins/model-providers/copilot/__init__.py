@@ -26,14 +26,13 @@ class CopilotProfile(ProviderProfile):
         model: str | None = None,
         reasoning_config: dict | None = None,
         supports_reasoning: bool = False,
+        supported_reasoning_efforts: list[str] | None = None,
         **ctx,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         extra_body: dict[str, Any] = {}
         if supports_reasoning and model:
             try:
-                from hermes_cli.models import github_model_reasoning_efforts
-
-                supported_efforts = github_model_reasoning_efforts(model)
+                supported_efforts = supported_reasoning_efforts or []
                 if not supported_efforts:
                     return extra_body, {}
                 if reasoning_config and reasoning_config.get("enabled") is False:
